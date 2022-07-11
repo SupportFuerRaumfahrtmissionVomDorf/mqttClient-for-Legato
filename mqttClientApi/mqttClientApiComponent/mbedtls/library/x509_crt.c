@@ -49,6 +49,7 @@
 
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
+
 #else
 #include <stdlib.h>
 #define mbedtls_free       free
@@ -1154,7 +1155,8 @@ int mbedtls_x509_crt_parse_path( mbedtls_x509_crt *chain, const char *path )
     int t_ret;
     struct stat sb;
     struct dirent *entry;
-    char entry_name[255];
+// BY TS: changed buffer size from 255 to 512
+    char entry_name[512];
     DIR *dir = opendir( path );
 
     if( dir == NULL )
@@ -1170,9 +1172,11 @@ int mbedtls_x509_crt_parse_path( mbedtls_x509_crt *chain, const char *path )
 
     while( ( entry = readdir( dir ) ) != NULL )
     {
-        mbedtls_snprintf( entry_name, sizeof entry_name, "%s/%s", path, entry->d_name );
 
-        if( stat( entry_name, &sb ) == -1 )
+// BY TS: here was the length issue with snprintf length fixed length of the buffer from 255 to 512
+	mbedtls_snprintf( entry_name, sizeof entry_name, "%s/%s", path, entry->d_name );
+
+	if( stat( entry_name, &sb ) == -1 )
         {
             closedir( dir );
             ret = MBEDTLS_ERR_X509_FILE_IO_ERROR;
